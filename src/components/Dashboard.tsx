@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Thermometer, 
   Droplets, 
@@ -13,11 +14,18 @@ import {
   Clock,
   BarChart3,
   Settings,
-  Bell
+  Bell,
+  User,
+  LogOut,
+  Users
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserProfile } from "@/components/profile/UserProfile";
+import { UserManagement } from "@/components/admin/UserManagement";
 import heroImage from "@/assets/onion-storage-hero.jpg";
 
 const Dashboard = () => {
+  const { user, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // Mock data for demonstration
@@ -62,36 +70,79 @@ const Dashboard = () => {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70 flex items-center">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
-              Onion Storage Monitor
-            </h1>
-            <p className="text-primary-foreground/90 text-lg">
-              Professional inventory management for optimal storage conditions
-            </p>
+          <div className="container mx-auto px-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
+                Onion Storage Monitor
+              </h1>
+              <p className="text-primary-foreground/90 text-lg">
+                Professional inventory management for optimal storage conditions
+              </p>
+            </div>
+            
+            {user && (
+              <div className="flex items-center space-x-4">
+                <div className="text-right hidden sm:block">
+                  <p className="text-primary-foreground font-medium">{user.name}</p>
+                  <p className="text-primary-foreground/70 text-sm">
+                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                  </p>
+                </div>
+                <Avatar className="h-12 w-12 border-2 border-primary-foreground/20">
+                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarFallback className="bg-primary-foreground text-primary">
+                    {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={logout}
+                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className={`grid w-full mb-6 ${hasPermission('manage_users') ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Inventory
+            {hasPermission('view_inventory') && (
+              <TabsTrigger value="inventory" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Inventory
+              </TabsTrigger>
+            )}
+            {hasPermission('view_analytics') && (
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Profile
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </TabsTrigger>
+            {hasPermission('manage_users') && (
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Users
+              </TabsTrigger>
+            )}
+            {hasPermission('manage_settings') && (
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
@@ -196,76 +247,92 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="inventory" className="space-y-6">
-            <Card className="shadow-lg border-border/50">
-              <CardHeader>
-                <CardTitle>Inventory Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">Complete inventory management system coming soon.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button variant="outline" className="h-20 flex-col">
-                    <Package className="h-6 w-6 mb-2" />
-                    Add New Batch
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <TrendingUp className="h-6 w-6 mb-2" />
-                    Export Report
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          {hasPermission('view_inventory') && (
+            <TabsContent value="inventory" className="space-y-6">
+              <Card className="shadow-lg border-border/50">
+                <CardHeader>
+                  <CardTitle>Inventory Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">Complete inventory management system.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {hasPermission('manage_inventory') && (
+                      <Button variant="outline" className="h-20 flex-col">
+                        <Package className="h-6 w-6 mb-2" />
+                        Add New Batch
+                      </Button>
+                    )}
+                    {hasPermission('export_reports') && (
+                      <Button variant="outline" className="h-20 flex-col">
+                        <TrendingUp className="h-6 w-6 mb-2" />
+                        Export Report
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {hasPermission('view_analytics') && (
+            <TabsContent value="analytics" className="space-y-6">
+              <Card className="shadow-lg border-border/50">
+                <CardHeader>
+                  <CardTitle>Analytics & Reports</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">Advanced analytics and reporting features.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button variant="outline" className="h-20 flex-col">
+                      <BarChart3 className="h-6 w-6 mb-2" />
+                      Loss Analysis
+                    </Button>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <TrendingUp className="h-6 w-6 mb-2" />
+                      Usage Trends
+                    </Button>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <Package className="h-6 w-6 mb-2" />
+                      Storage Efficiency
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          <TabsContent value="profile" className="space-y-6">
+            <UserProfile />
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <Card className="shadow-lg border-border/50">
-              <CardHeader>
-                <CardTitle>Analytics & Reports</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">Advanced analytics and reporting features coming soon.</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button variant="outline" className="h-20 flex-col">
-                    <BarChart3 className="h-6 w-6 mb-2" />
-                    Loss Analysis
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <TrendingUp className="h-6 w-6 mb-2" />
-                    Usage Trends
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <Package className="h-6 w-6 mb-2" />
-                    Storage Efficiency
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasPermission('manage_users') && (
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="settings" className="space-y-6">
-            <Card className="shadow-lg border-border/50">
-              <CardHeader>
-                <CardTitle>Settings & Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">System settings and user management.</p>
-                <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Bell className="h-4 w-4 mr-2" />
-                    Notification Settings
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Storage Parameters
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Package className="h-4 w-4 mr-2" />
-                    User Management
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasPermission('manage_settings') && (
+            <TabsContent value="settings" className="space-y-6">
+              <Card className="shadow-lg border-border/50">
+                <CardHeader>
+                  <CardTitle>Settings & Configuration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">System settings and configuration.</p>
+                  <div className="space-y-4">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notification Settings
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Storage Parameters
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
