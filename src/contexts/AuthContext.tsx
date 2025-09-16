@@ -40,9 +40,62 @@ export interface AuthContextType {
   hasPermission: (permission: string) => boolean;
   users: User[];
   updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
+  clearAllData: () => void;
+  resetToDefaults: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Storage keys for localStorage
+const STORAGE_KEYS = {
+  USER_PROFILE: 'onionwatch-user-profile',
+  USERS_DATA: 'onionwatch-users-data'
+};
+
+// Helper functions for localStorage
+const loadUserProfile = (): User | null => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.warn('Failed to load user profile from localStorage:', error);
+  }
+  return null;
+};
+
+const saveUserProfile = (user: User | null) => {
+  try {
+    if (user) {
+      localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+    }
+  } catch (error) {
+    console.warn('Failed to save user profile to localStorage:', error);
+  }
+};
+
+const loadUsersData = (): User[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.USERS_DATA);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.warn('Failed to load users data from localStorage:', error);
+  }
+  return mockUsers;
+};
+
+const saveUsersData = (users: User[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.USERS_DATA, JSON.stringify(users));
+  } catch (error) {
+    console.warn('Failed to save users data to localStorage:', error);
+  }
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -100,8 +153,30 @@ const rolePermissions = {
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const loadedUsers = loadUsersData();
+    setUsers(loadedUsers);
+    setIsInitialized(true);
+  }, []);
+
+  // Save users data to localStorage whenever it changes
+  useEffect(() => {
+    if (isInitialized) {
+      saveUsersData(users);
+    }
+  }, [users, isInitialized]);
+
+  // Save user profile to localStorage whenever it changes
+  useEffect(() => {
+    if (isInitialized) {
+      saveUserProfile(user);
+    }
+  }, [user, isInitialized]);
 
   // Listen to authentication state changes
   useEffect(() => {
@@ -121,7 +196,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
         setUser(userData);
       } else {
-        setUser(null);
+        // Try to load user from localStorage if Firebase auth fails
+        const storedUser = loadUserProfile();
+        if (storedUser && !storedUser.firebaseUser) {
+          // Only restore non-Firebase users (demo/mock users)
+          setUser(storedUser);
+        } else {
+          setUser(null);
+        }
       }
       setIsLoading(false);
     });
@@ -229,6 +311,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return rolePermissions[user.role].includes(permission);
   };
 
+  const clearAllData = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.USERS_DATA);
+      setUser(null);
+      setUsers([]);
+    } catch (error) {
+      console.warn('Failed to clear auth data from localStorage:', error);
+    }
+  };
+
+  const resetToDefaults = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.USERS_DATA);
+      setUser(null);
+      setUsers(mockUsers);
+    } catch (error) {
+      console.warn('Failed to reset auth data:', error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     login,
@@ -242,7 +346,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading,
     hasPermission,
     users,
-    updateUserRole
+    updateUserRole,
+    clearAllData,
+    resetToDefaults
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

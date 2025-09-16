@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Package, ArrowUp, ArrowDown, Thermometer, Droplets, Clock, UploadCloud, X, Image } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const DashboardPage = () => {
+  const { t } = useTranslation();
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,40 +49,40 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <DashboardCard title="Total Batches" value="128" icon={<Package className="h-4 w-4 text-muted-foreground" />} trend="+5 since last week" trendDirection="up" />
-        <DashboardCard title="Healthy Stock" value="92.5%" icon={<ArrowUp className="h-4 w-4 text-green-500" />} />
-        <DashboardCard title="At Risk Batches" value="7" icon={<ArrowDown className="h-4 w-4 text-red-500" />} />
-        <DashboardCard title="Predicted Savings" value="$2,450" icon={<ArrowUp className="h-4 w-4 text-green-500" />} trend="+15% this month" trendDirection="up" />
+        <DashboardCard title={t('dashboard.totalBatches')} value="128" icon={<Package className="h-4 w-4 text-muted-foreground" />} trend={t('dashboard.sinceLastWeek', { count: '5' })} trendDirection="up" />
+        <DashboardCard title={t('dashboard.healthyStock')} value="92.5%" icon={<ArrowUp className="h-4 w-4 text-green-500" />} />
+        <DashboardCard title={t('dashboard.atRiskBatches')} value="7" icon={<ArrowDown className="h-4 w-4 text-red-500" />} />
+        <DashboardCard title={t('dashboard.predictedSavings')} value="$2,450" icon={<ArrowUp className="h-4 w-4 text-green-500" />} trend={t('dashboard.thisMonth', { percent: '15' })} trendDirection="up" />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Central Monitoring Panel</CardTitle>
-            <CardDescription>Real-time overview of your storage conditions and batch health.</CardDescription>
+            <CardTitle>{t('dashboard.centralMonitoring')}</CardTitle>
+            <CardDescription>{t('dashboard.centralMonitoringDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2">Real-time Storage Conditions</h3>
+              <h3 className="font-semibold mb-2">{t('dashboard.realtimeConditions')}</h3>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><Thermometer className="h-5 w-5 text-blue-500" /> Temperature: 12°C</div>
-                <div className="text-sm text-green-500">Optimal</div>
+                <div className="flex items-center gap-2"><Thermometer className="h-5 w-5 text-blue-500" /> {t('dashboard.temperature')}: 12°C</div>
+                <div className="text-sm text-green-500">{t('dashboard.optimal')}</div>
               </div>
               <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-2"><Droplets className="h-5 w-5 text-cyan-500" /> Humidity: 65%</div>
-                <div className="text-sm text-green-500">Optimal</div>
+                <div className="flex items-center gap-2"><Droplets className="h-5 w-5 text-cyan-500" /> {t('dashboard.humidity')}: 65%</div>
+                <div className="text-sm text-green-500">{t('dashboard.optimal')}</div>
               </div>
-              <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1"><Clock className="h-3 w-3" /> Last updated: 2 mins ago</div>
+              <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1"><Clock className="h-3 w-3" /> {t('dashboard.lastUpdated', { time: '2 mins' })}</div>
             </div>
             <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2">Batch Status Overview</h3>
+              <h3 className="font-semibold mb-2">{t('dashboard.batchStatusOverview')}</h3>
               <p className="text-sm text-muted-foreground">Pie chart showing batch health distribution will be here.</p>
             </div>
             <div className="p-4 border rounded-lg col-span-2">
-              <h3 className="font-semibold mb-2">Recent Activity Feed</h3>
+              <h3 className="font-semibold mb-2">{t('dashboard.recentActivityFeed')}</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>- Batch #ON-124 image uploaded. Prediction: 95% healthy.</li>
-                <li>- Alert: Batch #ON-089 requires attention.</li>
-                <li>- New batch #ON-125 added to Cold Storage A.</li>
+                <li>- {t('dashboard.activity1', { id: 'ON-124', percent: '95' })}</li>
+                <li>- {t('dashboard.activity2', { id: 'ON-089' })}</li>
+                <li>- {t('dashboard.activity3', { id: 'ON-125', location: 'Cold Storage A' })}</li>
               </ul>
             </div>
           </CardContent>
@@ -88,7 +90,7 @@ const DashboardPage = () => {
         <div className="col-span-3 flex flex-col gap-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle>{t('dashboard.quickActions')}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
                     <div 
@@ -109,9 +111,9 @@ const DashboardPage = () => {
                       />
                       <UploadCloud className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                       <p className="text-muted-foreground">
-                        Drag & drop onion images here or{' '}
+                        {t('dashboard.dragDropImages')}{' '}
                         <Button variant="link" className="p-0" onClick={triggerFileInput}>
-                          browse files
+                          {t('dashboard.browseFiles')}
                         </Button>
                         .
                       </p>
@@ -119,7 +121,7 @@ const DashboardPage = () => {
                     
                     {uploadedFiles.length > 0 && (
                       <div className="mt-2 space-y-2">
-                        <p className="text-sm font-medium">Uploaded Images ({uploadedFiles.length})</p>
+                        <p className="text-sm font-medium">{t('dashboard.uploadedImages')} ({uploadedFiles.length})</p>
                         <div className="grid grid-cols-3 gap-2">
                           {uploadedFiles.map((file, index) => (
                             <div key={index} className="relative group">
@@ -139,7 +141,7 @@ const DashboardPage = () => {
                           ))}
                         </div>
                         <Button className="w-full mt-2" size="sm">
-                          Quick Analyze
+                          {t('dashboard.quickAnalyze')}
                         </Button>
                       </div>
                     )}
@@ -147,10 +149,10 @@ const DashboardPage = () => {
             </Card>
             <Card className="border-orange-500">
                 <CardHeader>
-                    <CardTitle className="text-orange-500">Urgent Alerts</CardTitle>
+                    <CardTitle className="text-orange-500">{t('dashboard.urgentAlerts')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground">- Batch #ON-089 in Location B shows signs of early sprouting.</p>
+                    <p className="text-sm text-muted-foreground">- {t('dashboard.urgentAlert1', { id: 'ON-089', location: 'Location B' })}</p>
                 </CardContent>
             </Card>
         </div>

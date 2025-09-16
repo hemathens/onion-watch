@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search } from "lucide-react";
 import { useState, useRef, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { DataManagementSettings } from "@/components/settings/DataManagementSettings";
 
 const SettingsPage = () => {
   const { toast } = useToast();
@@ -314,13 +315,14 @@ const SettingsPage = () => {
     setIsAddUserDialogOpen(false);
   };
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-      <div className="col-span-3 flex flex-col gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>User Profile</CardTitle>
-            <CardDescription>Manage your personal and business information.</CardDescription>
-          </CardHeader>
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <div className="col-span-3 flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Profile</CardTitle>
+              <CardDescription>Manage your personal and business information.</CardDescription>
+            </CardHeader>
           <CardContent className="grid gap-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
@@ -614,6 +616,10 @@ const SettingsPage = () => {
           </Dialog>
         </CardContent>
       </Card>
+      </div>
+      
+      {/* Data Management Settings */}
+      <DataManagementSettings />
     </div>
   );
 };

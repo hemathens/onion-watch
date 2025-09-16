@@ -20,12 +20,14 @@ import {
   Users
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { UserProfile } from "@/components/profile/UserProfile";
 import { UserManagement } from "@/components/admin/UserManagement";
 import heroImage from "@/assets/onion-storage-hero.jpg";
 
 const Dashboard = () => {
   const { user, logout, hasPermission } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // Mock data for demonstration
@@ -73,10 +75,10 @@ const Dashboard = () => {
           <div className="container mx-auto px-4 flex justify-between items-center">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
-                Onion Storage Monitor
+                {t('dashboard.title')}
               </h1>
               <p className="text-primary-foreground/90 text-lg">
-                Professional inventory management for optimal storage conditions
+                {t('dashboard.subtitle')}
               </p>
             </div>
             
@@ -114,34 +116,34 @@ const Dashboard = () => {
           <TabsList className={`grid w-full mb-6 ${hasPermission('manage_users') ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              Dashboard
+              {t('nav.dashboard')}
             </TabsTrigger>
             {hasPermission('view_inventory') && (
               <TabsTrigger value="inventory" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
-                Inventory
+                {t('nav.inventory')}
               </TabsTrigger>
             )}
             {hasPermission('view_analytics') && (
               <TabsTrigger value="analytics" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Analytics
+                {t('nav.analytics')}
               </TabsTrigger>
             )}
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              Profile
+              {t('nav.profile')}
             </TabsTrigger>
             {hasPermission('manage_users') && (
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Users
+                {t('nav.users')}
               </TabsTrigger>
             )}
             {hasPermission('manage_settings') && (
               <TabsTrigger value="settings" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Settings
+                {t('nav.settings')}
               </TabsTrigger>
             )}
           </TabsList>
@@ -151,7 +153,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="shadow-lg border-border/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Temperature</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('dashboard.temperature')}</CardTitle>
                   <Thermometer className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -160,14 +162,14 @@ const Dashboard = () => {
                     <StatusIcon status={metrics.temperature.status} />
                   </div>
                   <Badge variant={getStatusBadge(metrics.temperature.status)} className="mt-2">
-                    {metrics.temperature.status.charAt(0).toUpperCase() + metrics.temperature.status.slice(1)}
+                    {t(`status.${metrics.temperature.status}`)}
                   </Badge>
                 </CardContent>
               </Card>
 
               <Card className="shadow-lg border-border/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Humidity</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('dashboard.humidity')}</CardTitle>
                   <Droplets className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -176,33 +178,33 @@ const Dashboard = () => {
                     <StatusIcon status={metrics.humidity.status} />
                   </div>
                   <Badge variant={getStatusBadge(metrics.humidity.status)} className="mt-2">
-                    {metrics.humidity.status.charAt(0).toUpperCase() + metrics.humidity.status.slice(1)}
+                    {t(`status.${metrics.humidity.status}`)}
                   </Badge>
                 </CardContent>
               </Card>
 
               <Card className="shadow-lg border-border/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('dashboard.totalBatches')}</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{metrics.totalBatches}</div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {metrics.totalInventory} total inventory
+                    {t('dashboard.totalInventory', { amount: metrics.totalInventory })}
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="shadow-lg border-border/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('dashboard.expiringBatches')}</CardTitle>
                   <Bell className="h-4 w-4 text-warning" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-warning">{metrics.expiringBatches}</div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Require attention within 7 days
+                    {t('dashboard.requiresAttention', { days: '7' })}
                   </p>
                 </CardContent>
               </Card>
@@ -213,7 +215,7 @@ const Dashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Recent Batches Overview
+                  {t('dashboard.recentBatches')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -227,14 +229,14 @@ const Dashboard = () => {
                         <div className="flex items-center space-x-2 mb-1">
                           <h3 className="font-semibold">{batch.id}</h3>
                           <Badge variant={getStatusBadge(batch.status)}>
-                            {batch.status}
+                            {t(`status.${batch.status}`)}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {batch.quantity} • Entry: {batch.entryDate}
+                          {batch.quantity} • {t('dashboard.entryDate', { date: batch.entryDate })}
                         </p>
                         <p className="text-sm font-medium">
-                          Shelf life: {batch.shelfLife}
+                          {t('dashboard.shelfLife', { time: batch.shelfLife })}
                         </p>
                       </div>
                       <StatusIcon status={batch.status} />
@@ -242,7 +244,7 @@ const Dashboard = () => {
                   ))}
                 </div>
                 <Button className="w-full mt-4" variant="outline">
-                  View All Batches
+                  {t('dashboard.viewAllBatches')}
                 </Button>
               </CardContent>
             </Card>
@@ -252,21 +254,21 @@ const Dashboard = () => {
             <TabsContent value="inventory" className="space-y-6">
               <Card className="shadow-lg border-border/50">
                 <CardHeader>
-                  <CardTitle>Inventory Management</CardTitle>
+                  <CardTitle>{t('inventory.management')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-4">Complete inventory management system.</p>
+                  <p className="text-muted-foreground mb-4">{t('inventory.managementDesc')}</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {hasPermission('manage_inventory') && (
                       <Button variant="outline" className="h-20 flex-col">
                         <Package className="h-6 w-6 mb-2" />
-                        Add New Batch
+                        {t('inventory.addNewBatch')}
                       </Button>
                     )}
                     {hasPermission('export_reports') && (
                       <Button variant="outline" className="h-20 flex-col">
                         <TrendingUp className="h-6 w-6 mb-2" />
-                        Export Report
+                        {t('inventory.exportReport')}
                       </Button>
                     )}
                   </div>
@@ -279,22 +281,22 @@ const Dashboard = () => {
             <TabsContent value="analytics" className="space-y-6">
               <Card className="shadow-lg border-border/50">
                 <CardHeader>
-                  <CardTitle>Analytics & Reports</CardTitle>
+                  <CardTitle>{t('analytics.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-4">Advanced analytics and reporting features.</p>
+                  <p className="text-muted-foreground mb-4">{t('analytics.description')}</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Button variant="outline" className="h-20 flex-col">
                       <BarChart3 className="h-6 w-6 mb-2" />
-                      Loss Analysis
+                      {t('analytics.lossAnalysis')}
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <TrendingUp className="h-6 w-6 mb-2" />
-                      Usage Trends
+                      {t('analytics.usageTrends')}
                     </Button>
                     <Button variant="outline" className="h-20 flex-col">
                       <Package className="h-6 w-6 mb-2" />
-                      Storage Efficiency
+                      {t('analytics.storageEfficiency')}
                     </Button>
                   </div>
                 </CardContent>
@@ -316,18 +318,18 @@ const Dashboard = () => {
             <TabsContent value="settings" className="space-y-6">
               <Card className="shadow-lg border-border/50">
                 <CardHeader>
-                  <CardTitle>Settings & Configuration</CardTitle>
+                  <CardTitle>{t('settings.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-4">System settings and configuration.</p>
+                  <p className="text-muted-foreground mb-4">{t('settings.description')}</p>
                   <div className="space-y-4">
                     <Button variant="outline" className="w-full justify-start">
                       <Bell className="h-4 w-4 mr-2" />
-                      Notification Settings
+                      {t('settings.notifications')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start">
                       <Settings className="h-4 w-4 mr-2" />
-                      Storage Parameters
+                      {t('settings.storageParameters')}
                     </Button>
                   </div>
                 </CardContent>

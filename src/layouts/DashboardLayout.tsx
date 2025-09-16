@@ -4,24 +4,40 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Bell, Home, BarChart, Settings, User, Package, Upload, FileText, Bot, Wifi, LogOut } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInventory } from "@/contexts/InventoryContext";
+import { LanguageSelector } from "@/components/ui/language-selector";
+import { useTranslation } from "@/hooks/useTranslation";
+import { AddBatchDialog, BatchFormData } from "@/components/inventory/AddBatchDialog";
+import { useState } from "react";
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { logout } = useAuth();
+  const { addBatch } = useInventory();
+  const { t } = useTranslation();
+  const [isAddBatchDialogOpen, setIsAddBatchDialogOpen] = useState(false);
+
+  const handleAddBatch = (batchData: BatchFormData) => {
+    // Add the batch to inventory context
+    addBatch(batchData);
+    
+    // Navigate to inventory page to see the new batch
+    navigate('/dashboard/inventory');
+  };
 
   const handleLogout = async () => {
     try {
       await logout();
       toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
+        title: t('message.loggedOut'),
+        description: t('message.loggedOutDescription'),
       });
       navigate('/');
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
+        title: t('message.error'),
+        description: t('message.failedLogout'),
         variant: "destructive"
       });
     }
@@ -41,31 +57,31 @@ const DashboardLayout = () => {
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               <NavLink to="/dashboard" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive ? 'bg-muted text-primary' : ''}`}>
                 <Home className="h-4 w-4" />
-                Home
+                {t('nav.dashboard')}
               </NavLink>
               <NavLink to="/dashboard/inventory" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive ? 'bg-muted text-primary' : ''}`}>
                 <Package className="h-4 w-4" />
-                Inventory
+                {t('nav.inventory')}
               </NavLink>
               <NavLink to="/dashboard/predictions" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive ? 'bg-muted text-primary' : ''}`}>
                 <Bot className="h-4 w-4" />
-                AI Predictions
+                {t('nav.aiPredictions')}
               </NavLink>
               <NavLink to="/dashboard/alerts" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive ? 'bg-muted text-primary' : ''}`}>
                 <Bell className="h-4 w-4" />
-                Alerts
+                {t('nav.alerts')}
               </NavLink>
               <NavLink to="/dashboard/reports" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive ? 'bg-muted text-primary' : ''}`}>
                 <BarChart className="h-4 w-4" />
-                Reports
+                {t('nav.reports')}
               </NavLink>
               <NavLink to="/dashboard/settings" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive ? 'bg-muted text-primary' : ''}`}>
                 <Settings className="h-4 w-4" />
-                Settings
+                {t('nav.settings')}
               </NavLink>
               <NavLink to="/dashboard/iot" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive ? 'bg-muted text-primary' : ''}`}>
                 <Wifi className="h-4 w-4" />
-                IoT Integration
+                {t('nav.iotIntegration')}
               </NavLink>
             </nav>
           </div>
@@ -74,13 +90,21 @@ const DashboardLayout = () => {
       <div className="flex flex-col">
         <header className="flex h-14 items-center gap-4 border-b bg-gradient-to-r from-yellow-100 to-white px-4 lg:h-[60px] lg:px-6">
           <div className="w-full flex-1">
-            <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
+            <h1 className="text-lg font-semibold md:text-2xl">{t('nav.dashboard')}</h1>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" className="gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1"
+              onClick={() => setIsAddBatchDialogOpen(true)}
+            >
               <Package className="h-4 w-4" />
-              Add New Batch
+              {t('button.addNewBatch')}
             </Button>
+            
+            {/* Language Selector */}
+            <LanguageSelector variant="outline" size="sm" />
             
             {/* Red Sign Out Button */}
             <Button 
@@ -90,7 +114,7 @@ const DashboardLayout = () => {
               className="bg-red-600 hover:bg-red-700 text-white gap-2"
             >
               <LogOut className="h-4 w-4" />
-              Sign Out
+              {t('auth.signOut')}
             </Button>
           </div>
           <Link to="/dashboard/alerts">
@@ -110,16 +134,16 @@ const DashboardLayout = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('account.myAccount')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/dashboard/settings">Settings</Link>
+                <Link to="/dashboard/settings">{t('button.settings')}</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/dashboard/support">Support</Link>
+                <Link to="/dashboard/support">{t('button.support')}</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>{t('button.logout')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -127,6 +151,13 @@ const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+      
+      {/* Add Batch Dialog */}
+      <AddBatchDialog
+        isOpen={isAddBatchDialogOpen}
+        onClose={() => setIsAddBatchDialogOpen(false)}
+        onSubmit={handleAddBatch}
+      />
     </div>
   );
 };
