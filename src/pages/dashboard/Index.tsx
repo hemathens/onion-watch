@@ -44,7 +44,6 @@ const DashboardPage = () => {
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
-
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

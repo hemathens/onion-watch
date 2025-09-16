@@ -74,7 +74,6 @@ const SupportPage = () => {
       message: ""
     });
   };
-
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
       <div className="col-span-3 flex flex-col gap-4">

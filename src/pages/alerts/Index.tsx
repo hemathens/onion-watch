@@ -58,7 +58,7 @@ const AlertsPage = () => {
   });
 
   const handleViewBatch = (batchId: string) => {
-    navigate(`/inventory/${batchId}`);
+    navigate(`/dashboard/inventory/${batchId}`);
   };
 
   const handleResolveAlert = (alertId: number) => {
@@ -107,7 +107,6 @@ const AlertsPage = () => {
       description: "Your notification preferences have been updated successfully.",
     });
   };
-
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
       <Card className="col-span-4">

@@ -9,6 +9,17 @@ import { Link } from "react-router-dom";
 import { Search, MoreHorizontal, ArrowUpDown } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
+type Batch = {
+  id: string;
+  quantity: string;
+  qualityScore: number;
+  daysUntilExpiry: number;
+  location: string;
+  lastUpdated: string;
+  status: 'healthy' | 'at-risk' | 'critical';
+  priority: number;
+};
+
 // Sample batch data - in a real app this would come from an API
 const batchData = [
   {
@@ -18,7 +29,7 @@ const batchData = [
     daysUntilExpiry: 45,
     location: "Cold Storage A",
     lastUpdated: "2 hours ago",
-    status: "healthy",
+    status: "healthy" as const,
     priority: 1
   },
   {
@@ -28,7 +39,7 @@ const batchData = [
     daysUntilExpiry: 12,
     location: "Natural Ventilation B",
     lastUpdated: "1 day ago",
-    status: "at-risk",
+    status: "at-risk" as const,
     priority: 2
   },
   {
@@ -38,7 +49,7 @@ const batchData = [
     daysUntilExpiry: 5,
     location: "Cold Storage A",
     lastUpdated: "30 mins ago",
-    status: "critical",
+    status: "critical" as const,
     priority: 3
   },
   {
@@ -48,7 +59,7 @@ const batchData = [
     daysUntilExpiry: 38,
     location: "Cold Storage A",
     lastUpdated: "4 hours ago",
-    status: "healthy",
+    status: "healthy" as const,
     priority: 1
   },
   {
@@ -58,7 +69,7 @@ const batchData = [
     daysUntilExpiry: 22,
     location: "Natural Ventilation B",
     lastUpdated: "6 hours ago",
-    status: "healthy",
+    status: "healthy" as const,
     priority: 1
   }
 ];
@@ -77,7 +88,7 @@ const InventoryPage = () => {
   };
 
   const filteredAndSortedBatches = useMemo(() => {
-    let filtered = batchData.filter(batch => {
+            const filtered = batchData.filter((batch) => {
       const matchesSearch = batch.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || batch.status === statusFilter;
       const matchesLocation = locationFilter === "all" || 
@@ -88,7 +99,7 @@ const InventoryPage = () => {
     });
 
     // Sort by priority first (critical items first), then by selected criteria
-    filtered.sort((a, b) => {
+    filtered.sort((a: Batch, b: Batch) => {
       // Primary sort: Critical items first (higher priority number = more urgent)
       if (a.status === "critical" && b.status !== "critical") return -1;
       if (b.status === "critical" && a.status !== "critical") return 1;
@@ -96,7 +107,8 @@ const InventoryPage = () => {
       if (b.status === "at-risk" && a.status === "healthy") return 1;
 
       // Secondary sort: by selected criteria
-      let aValue: any, bValue: any;
+      let aValue: number | string | Date;
+      let bValue: number | string | Date;
       switch (sortBy) {
         case "priority":
           aValue = a.priority;
@@ -137,7 +149,6 @@ const InventoryPage = () => {
       setSortOrder("asc");
     }
   };
-
   return (
     <Card>
       <CardHeader>
