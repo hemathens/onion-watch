@@ -95,10 +95,11 @@ const Dashboard = () => {
                   </AvatarFallback>
                 </Avatar>
                 <Button 
-                  variant="ghost" 
+                  variant="destructive" 
                   size="icon"
                   onClick={logout}
-                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  title="Sign Out"
                 >
                   <LogOut className="h-5 w-5" />
                 </Button>

@@ -1,19 +1,30 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Bell, Home, BarChart, Settings, User, Package, Upload, FileText, Bot, Wifi } from 'lucide-react';
+import { Bell, Home, BarChart, Settings, User, Package, Upload, FileText, Bot, Wifi, LogOut } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -69,6 +80,17 @@ const DashboardLayout = () => {
             <Button variant="outline" size="sm" className="gap-1">
               <Package className="h-4 w-4" />
               Add New Batch
+            </Button>
+            
+            {/* Red Sign Out Button */}
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
             </Button>
           </div>
           <Link to="/dashboard/alerts">

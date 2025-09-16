@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { Loader2, UserPlus } from 'lucide-react';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -185,6 +187,23 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onToggleLogin
               'Create Account'
             )}
           </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <GoogleSignInButton
+            onSuccess={onSuccess}
+            onError={setError}
+            disabled={isLoading}
+          />
           
           <div className="text-center">
             <Button 
@@ -192,6 +211,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onToggleLogin
               variant="link" 
               onClick={onToggleLogin}
               className="text-sm"
+              disabled={isLoading}
             >
               Already have an account? Sign in
             </Button>

@@ -2,21 +2,32 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, CheckCircle, BarChart3, Shield, Zap } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [loginData, setLoginData] = useState({
     email: "",
     password: ""
   });
 
-  const handleLogin = () => {
+  // Redirect to dashboard if already authenticated
+  if (isAuthenticated) {
+    navigate('/dashboard');
+    return null;
+  }
+
+  const handleLogin = async () => {
     // Basic validation
     if (!loginData.email.trim()) {
       toast({
@@ -36,14 +47,47 @@ const LandingPage = () => {
       return;
     }
 
-    // Simulate login (in real app, this would be an API call)
+    setIsLoading(true);
+    try {
+      const success = await login(loginData.email, loginData.password);
+      if (success) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome to OnionWatch!",
+        });
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred during login. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = () => {
     toast({
       title: "Login Successful",
       description: "Welcome to OnionWatch!",
     });
-
-    // Navigate to dashboard
     navigate('/dashboard');
+  };
+
+  const handleGoogleError = (error: string) => {
+    toast({
+      title: "Google Sign-In Failed",
+      description: error,
+      variant: "destructive"
+    });
   };
 
   const features = [
@@ -180,9 +224,28 @@ const LandingPage = () => {
                 <Button 
                   className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
                   onClick={handleLogin}
+                  disabled={isLoading}
                 >
-                  Sign In
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <GoogleSignInButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  disabled={isLoading}
+                  className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+                />
                 <div className="text-center">
                   <Button variant="link" className="text-sm text-gray-600">
                     Forgot your password?
@@ -192,8 +255,9 @@ const LandingPage = () => {
                 {/* Demo credentials */}
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-2 font-medium">Demo Credentials:</p>
-                  <p className="text-xs text-gray-500">Email: admin@oniotech.com</p>
-                  <p className="text-xs text-gray-500">Password: demo123</p>
+                  <p className="text-xs text-gray-500">Email: admin@onionstorage.com</p>
+                  <p className="text-xs text-gray-500">Password: password</p>
+                  <p className="text-xs text-gray-500 mt-2 text-blue-600">Or use Google Sign-In above</p>
                 </div>
               </CardContent>
             </Card>

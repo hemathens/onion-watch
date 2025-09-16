@@ -4,12 +4,31 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import Dashboard from "@/components/Dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { LogIn } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import heroImage from "@/assets/onion-storage-hero.jpg";
 
 const Index = () => {
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleGoogleSuccess = () => {
+    toast({
+      title: "Login Successful",
+      description: "Welcome to OnionWatch!",
+    });
+  };
+
+  const handleGoogleError = (error: string) => {
+    toast({
+      title: "Google Sign-In Failed",
+      description: error,
+      variant: "destructive"
+    });
+  };
 
   if (isAuthenticated) {
     return <Dashboard />;
@@ -42,6 +61,27 @@ const Index = () => {
                 <LogIn className="h-5 w-5 mr-2" />
                 Get Started
               </Button>
+            </div>
+
+            {/* Quick Google Sign-In */}
+            <div className="mt-8 max-w-md mx-auto">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full border-primary-foreground/30" />
+                </div>
+                <div className="relative flex justify-center text-sm uppercase">
+                  <span className="bg-primary/95 px-3 text-primary-foreground/90">
+                    Quick Sign-In
+                  </span>
+                </div>
+              </div>
+              
+              <GoogleSignInButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                size="lg"
+                className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 text-lg px-8 py-6"
+              />
             </div>
 
             {/* Features Preview */}
