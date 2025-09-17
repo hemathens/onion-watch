@@ -2,14 +2,68 @@ import DashboardCard from "@/components/DashboardCard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, ArrowUp, ArrowDown, Thermometer, Droplets, Clock, UploadCloud, X, Image } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useInventory } from '@/contexts/InventoryContext';
 
 const DashboardPage = () => {
   const { t } = useTranslation();
+  const { batches } = useInventory();
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate dynamic metrics from actual batch data
+  const dynamicMetrics = useMemo(() => {
+    const totalBatches = batches.length;
+    const healthyBatches = batches.filter(b => b.status === 'healthy').length;
+    const atRiskBatches = batches.filter(b => b.status === 'at-risk').length;
+    const criticalBatches = batches.filter(b => b.status === 'critical').length;
+    
+    // Calculate total inventory weight
+    const totalWeight = batches.reduce((total, batch) => {
+      const weight = parseInt(batch.quantity.replace(/[^0-9]/g, '')) || 0;
+      return total + weight;
+    }, 0);
+    
+    // Calculate healthy stock percentage
+    const healthyPercentage = totalBatches > 0 ? ((healthyBatches / totalBatches) * 100).toFixed(1) : '100';
+    
+    // Calculate savings based on prevention of losses
+    const avgQuality = totalBatches > 0 
+      ? batches.reduce((sum, batch) => sum + batch.qualityScore, 0) / totalBatches 
+      : 100;
+    const estimatedSavings = Math.round((avgQuality / 100) * totalWeight * 25); // $25 per kg estimate
+    
+    return {
+      totalBatches,
+      healthyPercentage,
+      atRiskBatches,
+      estimatedSavings,
+      totalWeight
+    };
+  }, [batches]);
+
+  // Get recent activity from batch updates
+  const recentActivity = useMemo(() => {
+    const activities = [];
+    
+    // Add activities based on batch data
+    batches.slice(0, 3).forEach(batch => {
+      if (batch.status === 'critical') {
+        activities.push(t('dashboard.activity2', { id: batch.id }));
+      } else if (batch.qualityScore > 90) {
+        activities.push(t('dashboard.activity1', { id: batch.id, percent: batch.qualityScore }));
+      }
+    });
+    
+    // Add default activity if no batches
+    if (activities.length === 0) {
+      activities.push('No recent activity. Add some batches to see updates.');
+    }
+    
+    return activities.slice(0, 3); // Limit to 3 activities
+  }, [batches, t]);
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
@@ -49,10 +103,30 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <DashboardCard title={t('dashboard.totalBatches')} value="128" icon={<Package className="h-4 w-4 text-muted-foreground" />} trend={t('dashboard.sinceLastWeek', { count: '5' })} trendDirection="up" />
-        <DashboardCard title={t('dashboard.healthyStock')} value="92.5%" icon={<ArrowUp className="h-4 w-4 text-green-500" />} />
-        <DashboardCard title={t('dashboard.atRiskBatches')} value="7" icon={<ArrowDown className="h-4 w-4 text-red-500" />} />
-        <DashboardCard title={t('dashboard.predictedSavings')} value="$2,450" icon={<ArrowUp className="h-4 w-4 text-green-500" />} trend={t('dashboard.thisMonth', { percent: '15' })} trendDirection="up" />
+        <DashboardCard 
+          title={t('dashboard.totalBatches')} 
+          value={dynamicMetrics.totalBatches.toString()} 
+          icon={<Package className="h-4 w-4 text-muted-foreground" />} 
+          trend={dynamicMetrics.totalBatches > 5 ? t('dashboard.sinceLastWeek', { count: '2' }) : ''} 
+          trendDirection="up" 
+        />
+        <DashboardCard 
+          title={t('dashboard.healthyStock')} 
+          value={`${dynamicMetrics.healthyPercentage}%`} 
+          icon={<ArrowUp className="h-4 w-4 text-green-500" />} 
+        />
+        <DashboardCard 
+          title={t('dashboard.atRiskBatches')} 
+          value={dynamicMetrics.atRiskBatches.toString()} 
+          icon={<ArrowDown className="h-4 w-4 text-red-500" />} 
+        />
+        <DashboardCard 
+          title={t('dashboard.predictedSavings')} 
+          value={`$${dynamicMetrics.estimatedSavings.toLocaleString()}`} 
+          icon={<ArrowUp className="h-4 w-4 text-green-500" />} 
+          trend={dynamicMetrics.totalBatches > 0 ? t('dashboard.thisMonth', { percent: '12' }) : ''} 
+          trendDirection="up" 
+        />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
@@ -80,9 +154,9 @@ const DashboardPage = () => {
             <div className="p-4 border rounded-lg col-span-2">
               <h3 className="font-semibold mb-2">{t('dashboard.recentActivityFeed')}</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>- {t('dashboard.activity1', { id: 'ON-124', percent: '95' })}</li>
-                <li>- {t('dashboard.activity2', { id: 'ON-089' })}</li>
-                <li>- {t('dashboard.activity3', { id: 'ON-125', location: 'Cold Storage A' })}</li>
+                {recentActivity.map((activity, index) => (
+                  <li key={index}>- {activity}</li>
+                ))}
               </ul>
             </div>
           </CardContent>

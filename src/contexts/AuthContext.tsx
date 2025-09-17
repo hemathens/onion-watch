@@ -156,11 +156,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasSetInitialUser, setHasSetInitialUser] = useState(false);
 
   // Load data from localStorage on mount
   useEffect(() => {
     const loadedUsers = loadUsersData();
+    const storedUser = loadUserProfile();
     setUsers(loadedUsers);
+    
+    // Load stored user profile if it exists
+    if (storedUser) {
+      // For demo users (non-Firebase users), set immediately
+      if (!storedUser.firebaseUser) {
+        setUser(storedUser);
+        setHasSetInitialUser(true);
+        setIsLoading(false);
+      }
+      // For Firebase users, let the auth state listener handle it
+    }
+    
     setIsInitialized(true);
   }, []);
 
@@ -182,7 +196,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const unsubscribe = onAuthStateChange(async (firebaseUser) => {
       if (firebaseUser) {
-        // Create or update user profile
+        // Create or update user profile for Firebase users
         const userData: User = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || 'User',
@@ -195,27 +209,53 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           firebaseUser
         };
         setUser(userData);
+        setHasSetInitialUser(true);
       } else {
-        // Try to load user from localStorage if Firebase auth fails
-        const storedUser = loadUserProfile();
-        if (storedUser && !storedUser.firebaseUser) {
-          // Only restore non-Firebase users (demo/mock users)
-          setUser(storedUser);
-        } else {
-          setUser(null);
+        // Only handle logout if we haven't already set a demo user
+        if (!hasSetInitialUser) {
+          const storedUser = loadUserProfile();
+          if (storedUser && !storedUser.firebaseUser) {
+            // Keep demo user logged in
+            setUser(storedUser);
+          } else {
+            // No Firebase user and no valid demo user
+            setUser(null);
+          }
         }
       }
-      setIsLoading(false);
+      
+      // Only set loading to false if we haven't already set a user
+      if (!hasSetInitialUser) {
+        setIsLoading(false);
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [hasSetInitialUser]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      await signInWithEmail(email, password);
-      return true;
+      
+      // First try Firebase authentication
+      try {
+        await signInWithEmail(email, password);
+        return true;
+      } catch (firebaseError) {
+        // If Firebase fails, try demo/mock user authentication
+        console.log('Firebase login failed, trying demo accounts...');
+        
+        // Check if credentials match any mock user
+        const mockUser = mockUsers.find(u => u.email === email);
+        if (mockUser && password === 'password') {
+          // Set the mock user as current user
+          setUser(mockUser);
+          return true;
+        }
+        
+        // If neither Firebase nor demo login works, return false
+        return false;
+      }
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -239,9 +279,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async (): Promise<void> => {
     try {
-      await signOutUser();
+      // Clear localStorage first
+      saveUserProfile(null);
+      setUser(null);
+      
+      // Try Firebase logout (if user was logged in via Firebase)
+      if (auth.currentUser) {
+        await signOutUser();
+      }
     } catch (error) {
       console.error('Logout error:', error);
+      // Still clear local state even if Firebase logout fails
+      saveUserProfile(null);
+      setUser(null);
     }
   };
 
@@ -263,13 +313,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
     if (!user) return false;
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const updatedUser = { ...user, ...userData };
-    setUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u));
-    return true;
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const updatedUser = { ...user, ...userData, lastActivity: new Date().toISOString() };
+      setUser(updatedUser);
+      setUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u));
+      
+      // Force save to localStorage immediately
+      saveUserProfile(updatedUser);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return false;
+    }
   };
 
   const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
@@ -284,17 +343,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const uploadAvatar = async (file: File): Promise<string> => {
-    // Simulate file upload
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Return mock avatar URL
-    const avatarUrl = `/api/placeholder/100/100`;
-    
-    if (user) {
-      await updateProfile({ avatar: avatarUrl });
-    }
-    
-    return avatarUrl;
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const base64Data = event.target?.result as string;
+          
+          if (user) {
+            const updatedUser = { ...user, avatar: base64Data, lastActivity: new Date().toISOString() };
+            setUser(updatedUser);
+            // Also update in users list if it exists
+            setUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u));
+            
+            // Force save to localStorage immediately
+            saveUserProfile(updatedUser);
+          }
+          
+          resolve(base64Data);
+        } catch (error) {
+          console.error('Error uploading avatar:', error);
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   };
 
   const updateUserRole = async (userId: string, role: UserRole): Promise<boolean> => {

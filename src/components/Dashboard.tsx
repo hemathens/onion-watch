@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   Users
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInventory } from "@/contexts/InventoryContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProfile } from "@/components/profile/UserProfile";
 import { UserManagement } from "@/components/admin/UserManagement";
@@ -27,23 +28,59 @@ import heroImage from "@/assets/onion-storage-hero.jpg";
 
 const Dashboard = () => {
   const { user, logout, hasPermission } = useAuth();
+  const { batches } = useInventory();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Mock data for demonstration
-  const metrics = {
-    temperature: { value: 22, status: "optimal", unit: "°C" },
-    humidity: { value: 68, status: "warning", unit: "%" },
-    totalBatches: 24,
-    expiringBatches: 3,
-    totalInventory: "12,450 kg"
-  };
+  // Calculate dynamic metrics from actual batch data
+  const metrics = useMemo(() => {
+    const totalBatches = batches.length;
+    const criticalBatches = batches.filter(b => b.status === 'critical').length;
+    const atRiskBatches = batches.filter(b => b.status === 'at-risk').length;
+    const expiringBatches = batches.filter(b => b.daysUntilExpiry <= 7).length;
+    
+    // Calculate total inventory weight
+    const totalWeight = batches.reduce((total, batch) => {
+      const weight = parseInt(batch.quantity.replace(/[^0-9]/g, '')) || 0;
+      return total + weight;
+    }, 0);
+    
+    // Calculate average quality score for health status
+    const avgQuality = batches.length > 0 
+      ? batches.reduce((sum, batch) => sum + batch.qualityScore, 0) / batches.length 
+      : 100;
+    
+    return {
+      temperature: { 
+        value: 22, 
+        status: avgQuality > 80 ? "optimal" : avgQuality > 60 ? "warning" : "critical", 
+        unit: "°C" 
+      },
+      humidity: { 
+        value: 68, 
+        status: criticalBatches > 0 ? "critical" : atRiskBatches > 0 ? "warning" : "optimal", 
+        unit: "%" 
+      },
+      totalBatches,
+      expiringBatches,
+      totalInventory: `${totalWeight.toLocaleString()} kg`,
+      healthyPercentage: batches.length > 0 ? Math.round((batches.filter(b => b.status === 'healthy').length / batches.length) * 100) : 100
+    };
+  }, [batches]);
 
-  const recentBatches = [
-    { id: "B001", quantity: "850 kg", entryDate: "2024-01-15", shelfLife: "45 days", status: "good", image: "/api/placeholder/80/80" },
-    { id: "B002", quantity: "720 kg", entryDate: "2024-01-10", shelfLife: "12 days", status: "warning", image: "/api/placeholder/80/80" },
-    { id: "B003", quantity: "960 kg", entryDate: "2024-01-08", shelfLife: "8 days", status: "critical", image: "/api/placeholder/80/80" }
-  ];
+  // Get recent batches (latest 3)
+  const recentBatches = useMemo(() => {
+    return batches
+      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+      .slice(0, 3)
+      .map(batch => ({
+        id: batch.id,
+        quantity: batch.quantity,
+        entryDate: batch.receivedDate || 'Unknown',
+        shelfLife: `${batch.daysUntilExpiry} days`,
+        status: batch.status === 'healthy' ? 'good' : batch.status === 'at-risk' ? 'warning' : 'critical'
+      }));
+  }, [batches]);
 
   const StatusIcon = ({ status }: { status: string }) => {
     if (status === "optimal" || status === "good") return <CheckCircle className="h-4 w-4 text-success" />;

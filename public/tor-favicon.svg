@@ -1,0 +1,25 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="#8B5A96" stroke="#6B3F7A" stroke-width="1"/>
+  
+  <!-- Onion bulb main shape -->
+  <ellipse cx="16" cy="18" rx="8" ry="10" fill="#F5F5DC" stroke="#2D2D2D" stroke-width="1.5"/>
+  
+  <!-- Onion layers -->
+  <path d="M16 8 C12 10, 10 14, 10 18 C10 22, 12 26, 16 28 C20 26, 22 22, 22 18 C22 14, 20 10, 16 8 Z" fill="#F8F8F0" stroke="#2D2D2D" stroke-width="1" opacity="0.9"/>
+  
+  <!-- Inner onion layers -->
+  <path d="M16 10 C13 11.5, 12 14.5, 12 18 C12 21.5, 13 24.5, 16 26 C19 24.5, 20 21.5, 20 18 C20 14.5, 19 11.5, 16 10 Z" fill="#FEFEFE" stroke="#2D2D2D" stroke-width="0.8" opacity="0.8"/>
+  
+  <!-- Center line -->
+  <line x1="16" y1="10" x2="16" y2="26" stroke="#2D2D2D" stroke-width="0.5" opacity="0.6"/>
+  
+  <!-- Onion layers detail lines -->
+  <path d="M14 12 C14 14, 14 16, 14 18 C14 20, 14 22, 14 24" stroke="#2D2D2D" stroke-width="0.4" opacity="0.5" fill="none"/>
+  <path d="M18 12 C18 14, 18 16, 18 18 C18 20, 18 22, 18 24" stroke="#2D2D2D" stroke-width="0.4" opacity="0.5" fill="none"/>
+  
+  <!-- Green sprout/shoots -->
+  <path d="M16 8 L15 4 L14 6 L13 3" stroke="#8FBC8F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M16 8 L17 4 L18 6 L19 3" stroke="#9ACD32" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M16 8 L16 5" stroke="#7FBF3F" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+</svg>

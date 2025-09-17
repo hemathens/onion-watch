@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,19 @@ export const UserProfile: React.FC = () => {
     contactNumber: user?.contactNumber || '',
     address: user?.address || ''
   });
+
+  // Update profile data when user changes (for persistence)
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        email: user.email || '',
+        businessName: user.businessName || '',
+        contactNumber: user.contactNumber || '',
+        address: user.address || ''
+      });
+    }
+  }, [user]);
 
   const [passwordData, setPasswordData] = useState({
     oldPassword: '',

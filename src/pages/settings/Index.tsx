@@ -7,20 +7,35 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
-import { useState, useRef, useMemo } from 'react';
+import { Search, Camera, Loader2 } from "lucide-react";
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { DataManagementSettings } from "@/components/settings/DataManagementSettings";
 
 const SettingsPage = () => {
   const { toast } = useToast();
+  const { user, updateProfile, uploadAvatar } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  
   const [profile, setProfile] = useState({
-    name: "Admin User",
-    email: "admin@oniotech.com",
-    organization: "OnioTech Inc."
+    name: user?.name || "Admin User",
+    email: user?.email || "admin@oniotech.com",
+    organization: user?.businessName || "OnioTech Inc."
   });
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  // Update profile form when user data changes
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "Admin User",
+        email: user.email || "admin@oniotech.com",
+        organization: user.businessName || "OnioTech Inc."
+      });
+    }
+  }, [user]);
+
   const [users, setUsers] = useState([
     { id: 1, name: "Admin User", role: "Admin", status: "Active" },
     { id: 2, name: "Farmer John", role: "Farmer", status: "Active" },
@@ -49,44 +64,50 @@ const SettingsPage = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid File Type",
-          description: "Please select an image file (JPG, PNG, etc.).",
-          variant: "destructive"
-        });
-        return;
-      }
+    if (!file) return;
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File Too Large",
-          description: "Please select an image smaller than 5MB.",
-          variant: "destructive"
-        });
-        return;
-      }
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file (JPG, PNG, etc.).",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        setProfileImage(imageUrl);
-        toast({
-          title: "Photo Uploaded",
-          description: `${file.name} has been uploaded successfully.`,
-        });
-      };
-      reader.readAsDataURL(file);
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAvatarLoading(true);
+
+    try {
+      await uploadAvatar(file);
+      toast({
+        title: "Photo Uploaded",
+        description: `${file.name} has been uploaded successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setAvatarLoading(false);
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     // Validate profile fields
     if (!profile.name.trim()) {
       toast({
@@ -126,18 +147,27 @@ const SettingsPage = () => {
       return;
     }
 
-    // Update the current user in the users list (assuming Admin User is ID 1)
-    setUsers(prev => prev.map(user => 
-      user.id === 1 
-        ? { ...user, name: profile.name }
-        : user
-    ));
+    try {
+      // Update user profile using AuthContext
+      const success = await updateProfile({
+        name: profile.name,
+        email: profile.email,
+        businessName: profile.organization
+      });
 
-    // Save profile (in a real app, this would make an API call)
-    toast({
-      title: "Profile Saved Successfully",
-      description: "Your profile information has been updated.",
-    });
+      if (success) {
+        toast({
+          title: "Profile Saved Successfully",
+          description: "Your profile information has been updated.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditUser = (userId: number, userName: string) => {
@@ -325,30 +355,44 @@ const SettingsPage = () => {
             </CardHeader>
           <CardContent className="grid gap-4">
             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage 
-                  src={profileImage || "/placeholder.svg"} 
-                  alt="User avatar" 
-                />
-                <AvatarFallback>AD</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage 
+                    src={user?.avatar || "/placeholder.svg"} 
+                    alt="User avatar" 
+                  />
+                  <AvatarFallback>
+                    {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD'}
+                  </AvatarFallback>
+                </Avatar>
+                <label className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors">
+                  <Camera className="h-4 w-4" />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    disabled={avatarLoading}
+                  />
+                </label>
+                {avatarLoading && (
+                  <div className="absolute inset-0 bg-background/80 rounded-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                )}
+              </div>
               <div className="flex flex-col gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-                <Button variant="outline" onClick={handlePhotoUpload}>
-                  Upload Photo
+                <Button variant="outline" onClick={handlePhotoUpload} disabled={avatarLoading}>
+                  {avatarLoading ? 'Uploading...' : 'Upload Photo'}
                 </Button>
-                {profileImage && (
+                {user?.avatar && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={() => {
-                      setProfileImage(null);
+                      // Reset avatar to null through updateProfile
+                      updateProfile({ avatar: undefined });
                       toast({
                         title: "Photo Removed",
                         description: "Profile photo has been removed.",
