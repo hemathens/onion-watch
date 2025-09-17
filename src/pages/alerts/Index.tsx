@@ -5,9 +5,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { BellRing, AlertTriangle, Info, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import notificationService, { getEmailConfigStatus, getAlertRecipientEmail, setAlertRecipientEmail } from "@/services/notificationService";
 
 const AlertsPage = () => {
   const navigate = useNavigate();
@@ -54,8 +56,23 @@ const AlertsPage = () => {
     smsAlerts: false,
     pushNotifications: true,
     criticalThreshold: 30,
-    warningThreshold: 50
+    warningThreshold: 50,
+    alertEmail: getAlertRecipientEmail() || ''
   });
+
+  const { user } = useAuth();
+
+  // Persist email preference so notification service can respect it
+  useEffect(() => {
+    try {
+      localStorage.setItem('onionwatch-email-notifications', String(settings.emailNotifications));
+    } catch {}
+  }, [settings.emailNotifications]);
+
+  // Persist alert recipient email
+  useEffect(() => {
+    if (settings.alertEmail) setAlertRecipientEmail(settings.alertEmail);
+  }, [settings.alertEmail]);
 
   const handleViewBatch = (batchId: string) => {
     navigate(`/dashboard/inventory/${batchId}`);
@@ -106,6 +123,39 @@ const AlertsPage = () => {
       title: "Settings Saved",
       description: "Your notification preferences have been updated successfully.",
     });
+  };
+
+  const handleSendTestEmail = async () => {
+    try {
+      const cfg = getEmailConfigStatus();
+      if (!cfg.configured) {
+        const missing = [
+          cfg.missing.serviceId ? 'VITE_EMAILJS_SERVICE_ID' : null,
+          cfg.missing.templateId ? 'VITE_EMAILJS_TEMPLATE_ID' : null,
+          cfg.missing.publicKey ? 'VITE_EMAILJS_PUBLIC_KEY' : null,
+        ].filter(Boolean).join(', ');
+        toast({ title: "Email Service Not Configured", description: `Missing: ${missing}`, variant: "destructive" });
+        return;
+      }
+
+      const recipient = settings.alertEmail || user?.email;
+      if (!recipient) {
+        toast({ title: "No Recipient Email", description: "Set Alert Email or login with an email account.", variant: "destructive" });
+        return;
+      }
+      const ok = await notificationService.sendEmail(
+        recipient,
+        "OnionWatch Test Notification",
+        "This is a test email to verify your notification settings."
+      );
+      toast({
+        title: ok ? "Test Email Sent" : "Test Email Not Sent",
+        description: ok ? "Please check your inbox (and spam)." : "Disabled by preference or service rejected the request.",
+        variant: ok ? "default" : "destructive"
+      });
+    } catch (e) {
+      toast({ title: "Failed to Send Test Email", description: String(e), variant: "destructive" });
+    }
   };
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -299,7 +349,18 @@ const AlertsPage = () => {
                 placeholder="Quality score < 50%" 
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="alert-email">Alert Recipient Email</Label>
+              <Input
+                id="alert-email"
+                type="email"
+                value={settings.alertEmail}
+                onChange={(e) => setSettings(prev => ({ ...prev, alertEmail: e.target.value }))}
+                placeholder="e.g., alerts@yourdomain.com"
+              />
+            </div>
             <Button onClick={handleSaveSettings}>Save Settings</Button>
+            <Button variant="outline" onClick={handleSendTestEmail}>Send Test Email</Button>
           </div>
         </CardContent>
       </Card>

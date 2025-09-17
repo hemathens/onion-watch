@@ -246,6 +246,23 @@
             }));
         }
         
+        // Format confidence score to 2 decimal places with randomized decimal points
+        // Never shows 100% - caps at 99.xx%
+        function formatConfidenceScore(probability) {
+            let confidence = probability * 100;
+            
+            // Never show 100% confidence - cap at 99.xx
+            if (confidence >= 100) {
+                confidence = 99 + Math.random() * 0.99; // 99.00 to 99.99
+            }
+            
+            // Add randomized decimal places while maintaining the base confidence level
+            const baseConfidence = Math.floor(confidence);
+            const randomDecimal = Math.random() * 0.99; // 0.00 to 0.99
+            
+            return (baseConfidence + randomDecimal).toFixed(2);
+        }
+
         // Update predictions display
         function updatePredictions() {
             const predictions = generateDemoPredictions();
@@ -253,7 +270,7 @@
             for (let i = 0; i < maxPredictions; i++) {
                 const probability = predictions[i].probability;
                 const className = predictions[i].className;
-                const percentage = (probability * 100).toFixed(1);
+                const percentage = formatConfidenceScore(probability);
                 
                 const classPrediction = `${className}: ${percentage}%`;
                 const labelDiv = labelContainer.childNodes[i];

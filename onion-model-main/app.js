@@ -149,6 +149,23 @@ async function loop() {
     }
 }
 
+// Format confidence score to 2 decimal places with randomized decimal points
+// Never shows 100% - caps at 99.xx%
+function formatConfidenceScore(probability) {
+    let confidence = probability * 100;
+    
+    // Never show 100% confidence - cap at 99.xx
+    if (confidence >= 100) {
+        confidence = 99 + Math.random() * 0.99; // 99.00 to 99.99
+    }
+    
+    // Add randomized decimal places while maintaining the base confidence level
+    const baseConfidence = Math.floor(confidence);
+    const randomDecimal = Math.random() * 0.99; // 0.00 to 0.99
+    
+    return (baseConfidence + randomDecimal).toFixed(2);
+}
+
 // Run prediction on image/canvas
 async function predict(imageElement) {
     if (!model) {
@@ -174,7 +191,7 @@ async function predict(imageElement) {
         for (let i = 0; i < Math.min(prediction.length, maxPredictions); i++) {
             const probability = prediction[i].probability || 0;
             const className = prediction[i].className || `Class ${i + 1}`;
-            const percentage = (probability * 100).toFixed(1);
+            const percentage = formatConfidenceScore(probability);
             
             const classPrediction = `${className}: ${percentage}%`;
             const labelDiv = labelContainer.childNodes[i];

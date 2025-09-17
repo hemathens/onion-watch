@@ -5,18 +5,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
-import { Search, MoreHorizontal, ArrowUpDown, Plus } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, MoreHorizontal, ArrowUpDown, Plus, Edit, Trash2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useInventory, Batch as InventoryBatch } from '@/contexts/InventoryContext';
 import { AddBatchDialog } from '@/components/inventory/AddBatchDialog';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useToast } from '@/hooks/use-toast';
 
 
 
 const InventoryPage = () => {
-  const { batches } = useInventory();
+  const { batches, deleteBatch } = useInventory();
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -90,6 +94,28 @@ const InventoryPage = () => {
     } else {
       setSortBy(field);
       setSortOrder("asc");
+    }
+  };
+
+  const handleEditBatch = (batchId: string) => {
+    // Navigate to batch detail page for editing
+    navigate(`/dashboard/inventory/${batchId}`);
+  };
+
+  const handleDeleteBatch = (batchId: string, batchTitle: string) => {
+    try {
+      deleteBatch(batchId);
+      toast({
+        title: "Batch Deleted",
+        description: `Batch ${batchTitle} has been successfully deleted from inventory.`,
+      });
+    } catch (error) {
+      console.error('Error deleting batch:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Could not delete the batch. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   return (
@@ -209,10 +235,41 @@ const InventoryPage = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link to={`/dashboard/inventory/${batch.id}`}>{t('button.viewDetails')}</Link>
+                            <Link to={`/dashboard/inventory/${batch.id}`} className="flex items-center gap-2">
+                              <Search className="h-4 w-4" />
+                              {t('button.viewDetails')}
+                            </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>{t('button.edit')}</DropdownMenuItem>
-                          <DropdownMenuItem>{t('button.generateAlert')}</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditBatch(batch.id)} className="flex items-center gap-2">
+                            <Edit className="h-4 w-4" />
+                            {t('button.edit')}
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 text-red-600">
+                                <Trash2 className="h-4 w-4" />
+                                {t('button.delete')}
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Batch {batch.id}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this batch? This action cannot be undone.
+                                  This will permanently remove the batch "{batch.id}" ({batch.quantity}) from your inventory.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteBatch(batch.id, batch.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
